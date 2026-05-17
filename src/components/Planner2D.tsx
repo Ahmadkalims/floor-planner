@@ -481,7 +481,7 @@ export const Planner2D: React.FC = () => {
         onWheel={handleWheel}
       >
         <Layer>
-          <Group opacity={0.1}>
+          <Group opacity={0.3}>
             {Array.from({ length: 100 }).map((_, i) => (
               <React.Fragment key={i}>
                 <Line points={[-2000, (i-50) * 50, 4000, (i-50) * 50]} stroke={strokeColor} strokeWidth={1} />

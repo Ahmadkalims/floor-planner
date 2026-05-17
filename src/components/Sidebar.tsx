@@ -4,7 +4,7 @@ import type { ItemType } from '../store/useStore';
 import { 
   MousePointer2, Square, DoorClosed, Sofa, Trash2,
   ScanLine, BedDouble, Bath, Wind, Combine, Lightbulb,
-  Download, Upload
+  Download, Upload, ChevronLeft, ChevronRight
 } from 'lucide-react';
 
 export const Sidebar: React.FC = () => {
@@ -15,6 +15,7 @@ export const Sidebar: React.FC = () => {
     phase
   } = useStore();
 
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [activeTab, setActiveTab] = useState<'build' | 'furniture' | 'lighting' | 'plumbing'>('build');
 
   if (phase === '3d') return null;
@@ -54,7 +55,29 @@ export const Sidebar: React.FC = () => {
   };
 
   return (
-    <div className="sidebar glass-panel" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+    <>
+      {/* Sidebar Toggle Button */}
+      <button 
+        style={{ 
+          position: 'absolute', top: '80px', left: isSidebarOpen ? '320px' : '20px', 
+          zIndex: 51, padding: '8px', borderRadius: '8px', cursor: 'pointer', 
+          transition: 'left 0.3s ease', background: 'var(--panel-bg)',
+          border: '1px solid var(--panel-border)', color: 'var(--text-main)',
+          backdropFilter: 'blur(24px) saturate(180%)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          boxShadow: '0 4px 16px rgba(0,0,0,0.1)'
+        }}
+        onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+        title="Toggle Sidebar"
+      >
+        {isSidebarOpen ? <ChevronLeft size={20} /> : <ChevronRight size={20} />}
+      </button>
+
+      <div className="sidebar glass-panel" style={{ 
+        display: 'flex', flexDirection: 'column',
+        left: isSidebarOpen ? '20px' : '-350px',
+        transition: 'left 0.3s ease',
+        paddingBottom: '20px'
+      }}>
       <div>
         <div className="section-title">Draw Tools</div>
         <div className="tool-grid">
@@ -196,5 +219,6 @@ export const Sidebar: React.FC = () => {
         </button>
       </div>
     </div>
+    </>
   );
 };

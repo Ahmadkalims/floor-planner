@@ -385,6 +385,7 @@ const CrossSectionPanel: React.FC = () => {
 
 const ItemPropertiesPanel3D: React.FC = () => {
   const { selectedIds, items, updateItem, gizmoMode, setGizmoMode } = useStore();
+  const [isLeftPanelOpen, setIsLeftPanelOpen] = useState(true);
   const selectedItem = items.find(i => i.id === selectedIds[0]);
 
   if (selectedIds.length !== 1 || !selectedItem) return null;
@@ -394,7 +395,26 @@ const ItemPropertiesPanel3D: React.FC = () => {
   const variants = ModelRegistry[selectedItem.type] || [];
 
   return (
-    <div className="glass-panel" style={{ position: 'absolute', top: '80px', left: '20px', zIndex: 10, width: '250px', display: 'flex', flexDirection: 'column', gap: '15px' }}>
+    <>
+      <button 
+        style={{ 
+          position: 'absolute', top: '80px', left: isLeftPanelOpen ? '280px' : '20px', 
+          zIndex: 11, padding: '8px', borderRadius: '8px', cursor: 'pointer', 
+          transition: 'left 0.3s ease', background: 'var(--panel-bg)',
+          border: '1px solid var(--panel-border)', color: 'var(--text-main)',
+          backdropFilter: 'blur(24px) saturate(180%)', display: 'flex', alignItems: 'center', justifyContent: 'center'
+        }}
+        onClick={() => setIsLeftPanelOpen(!isLeftPanelOpen)}
+        title="Toggle Properties"
+      >
+        {isLeftPanelOpen ? <ChevronLeft size={20} /> : <ChevronRight size={20} />}
+      </button>
+
+      <div className="glass-panel" style={{ 
+        position: 'absolute', top: '80px', left: isLeftPanelOpen ? '20px' : '-300px', 
+        zIndex: 10, width: '250px', display: 'flex', flexDirection: 'column', gap: '15px',
+        transition: 'left 0.3s ease'
+      }}>
       <div className="section-title" style={{ textTransform: 'capitalize' }}>{selectedItem.type} Properties</div>
       
       {!isPolygon && (
@@ -492,13 +512,25 @@ const ItemPropertiesPanel3D: React.FC = () => {
         </div>
       )}
     </div>
+    </>
   );
 };
 
 export const Visualizer3D: React.FC = () => {
-  const { walls, phase, theme } = useStore();
+  const { walls, phase, theme, setSelectedIds } = useStore();
   const [aiModalOpen, setAiModalOpen] = useState(false);
   const [isRightPanelOpen, setIsRightPanelOpen] = useState(true);
+
+  // Global Escape key to deselect
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && phase === '3d') {
+        setSelectedIds([]);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [phase, setSelectedIds]);
 
   const center = useMemo(() => {
     if (walls.length === 0) return [300, 0, 300];
@@ -553,10 +585,15 @@ export const Visualizer3D: React.FC = () => {
 
       <AIRenderModal isOpen={aiModalOpen} onClose={() => setAiModalOpen(false)} />
 
-      <Canvas gl={{ preserveDrawingBuffer: true }} shadows camera={{ position: [center[0], 800, center[2] + 800], fov: 45, far: 10000 }}>
+      <Canvas 
+        gl={{ preserveDrawingBuffer: true }} 
+        shadows 
+        camera={{ position: [center[0], 800, center[2] + 800], fov: 45, far: 10000 }}
+        onPointerMissed={() => setSelectedIds([])}
+      >
         <React.Suspense fallback={null}>
-          <color attach="background" args={[theme === 'dark' ? '#172033' : '#f8fafc']} />
-          <fog attach="fog" args={[theme === 'dark' ? '#172033' : '#f8fafc', 1500, 4500]} />
+          <color attach="background" args={[theme === 'dark' ? '#1e293b' : '#f8fafc']} />
+          <fog attach="fog" args={[theme === 'dark' ? '#1e293b' : '#f8fafc', 1500, 4500]} />
           
           <ambientLight intensity={theme === 'dark' ? 0.9 : 1.2} color={theme === 'dark' ? "#e0e7ff" : "#ffffff"} />
           

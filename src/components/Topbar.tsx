@@ -1,18 +1,14 @@
 import React from 'react';
 import { useStore } from '../store/useStore';
-import { Box, Layers, PlaySquare, Sun, Moon } from 'lucide-react';
+import { Layers, PlaySquare, Sun, Moon } from 'lucide-react';
 
 export const Topbar: React.FC = () => {
   const { phase, setPhase, theme, setTheme } = useStore();
 
   return (
-    <div className="topbar glass-panel">
-      <div className="brand">
-        <Box className="brand-icon" size={28} />
-        <span>PlanCraft 3D</span>
-      </div>
-
-      <div className="mode-switcher">
+    <div className="topbar" style={{ justifyContent: 'center', pointerEvents: 'none' }}>
+      
+      <div className="mode-switcher" style={{ pointerEvents: 'auto' }}>
         <button 
           className={`mode-btn ${phase === '2d' ? 'active' : ''}`}
           onClick={() => setPhase('2d')}
@@ -29,15 +25,16 @@ export const Topbar: React.FC = () => {
         </button>
       </div>
 
-      <div style={{ display: 'flex', gap: '12px' }}>
+      <div style={{ position: 'absolute', right: '24px', pointerEvents: 'auto' }}>
         <button 
           className="tool-btn" 
-          style={{ padding: '8px', borderRadius: '50%' }}
+          style={{ padding: '8px', borderRadius: '50%', background: 'var(--panel-bg)', backdropFilter: 'blur(16px)', border: '1px solid var(--panel-border)' }}
           onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
         >
           {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
         </button>
       </div>
+
     </div>
   );
 };

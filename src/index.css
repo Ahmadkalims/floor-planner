@@ -1,16 +1,16 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 :root {
-  --bg-color: #0f111a;
-  --bg-color-light: #ffffff;
-  --bg-color-transparent: rgba(15, 17, 26, 0.7);
+  --bg-color: #1e293b;
+  --bg-color-light: #f8fafc;
+  --bg-color-transparent: rgba(30, 41, 59, 0.7);
   --bg-color-light-transparent: rgba(255, 255, 255, 0.7);
   
-  --panel-bg: rgba(25, 28, 41, 0.65);
-  --panel-bg-light: rgba(240, 242, 245, 0.65);
+  --panel-bg: rgba(15, 17, 26, 0.35);
+  --panel-bg-light: rgba(255, 255, 255, 0.25);
   
-  --panel-border: rgba(255, 255, 255, 0.08);
-  --panel-border-light: rgba(0, 0, 0, 0.08);
+  --panel-border: rgba(255, 255, 255, 0.15);
+  --panel-border-light: rgba(255, 255, 255, 0.4);
   
   --text-main: #f0f2f5;
   --text-main-light: #111827;
@@ -61,10 +61,10 @@ body {
 /* Glassmorphism Utilities */
 .glass-panel {
   background: var(--panel-bg);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
   border: 1px solid var(--panel-border);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.15);
 }
 
 /* Layout Elements */
@@ -99,7 +99,7 @@ body {
 
 .sidebar {
   width: 280px;
-  height: calc(100vh - 100px);
+  height: calc(100vh - 120px);
   position: absolute;
   left: 20px;
   top: 80px;
@@ -158,10 +158,13 @@ body {
 
 .mode-switcher {
   display: flex;
-  background: rgba(0, 0, 0, 0.2);
+  background: var(--panel-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border-radius: 30px;
   padding: 4px;
   border: 1px solid var(--panel-border);
+  box-shadow: 0 4px 16px 0 rgba(0, 0, 0, 0.1);
 }
 
 .mode-btn {
