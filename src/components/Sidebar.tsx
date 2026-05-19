@@ -11,7 +11,7 @@ export const Sidebar: React.FC = () => {
   const { 
     mode, setMode, 
     activeToolItemType, setActiveToolItemType,
-    clearAll, mockAI_Populate, mockAI_Scan,
+    clearAll, mockAI_Populate, aiScanImage,
     phase
   } = useStore();
 
@@ -63,7 +63,7 @@ export const Sidebar: React.FC = () => {
           zIndex: 51, padding: '8px', borderRadius: '8px', cursor: 'pointer', 
           transition: 'left 0.3s ease', background: 'var(--panel-bg)',
           border: '1px solid var(--panel-border)', color: 'var(--text-main)',
-          backdropFilter: 'blur(24px) saturate(180%)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          backdropFilter: 'blur(24px) saturate(180%)', WebkitBackdropFilter: 'blur(24px) saturate(180%)', display: 'flex', alignItems: 'center', justifyContent: 'center',
           boxShadow: '0 4px 16px rgba(0,0,0,0.1)'
         }}
         onClick={() => setIsSidebarOpen(!isSidebarOpen)}
@@ -206,10 +206,21 @@ export const Sidebar: React.FC = () => {
             <input type="file" accept=".json" onChange={handleImport} style={{ display: 'none' }} />
           </label>
         </div>
-        <button className="action-btn secondary" onClick={mockAI_Scan}>
+        <label className="action-btn secondary" style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', margin: 0 }}>
           <ScanLine size={18} />
-          Scan Map (AI Mock)
-        </button>
+          Scan Map via AI
+          <input 
+            type="file" 
+            accept="image/*" 
+            style={{ display: 'none' }} 
+            onChange={(e) => {
+              if (e.target.files && e.target.files.length > 0) {
+                aiScanImage(e.target.files[0]);
+                e.target.value = '';
+              }
+            }} 
+          />
+        </label>
         <button className="action-btn" onClick={mockAI_Populate}>
           AI Populate Room
         </button>

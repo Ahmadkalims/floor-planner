@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import { v4 as uuidv4 } from 'uuid';
 import { ModelRegistry } from '../config/models';
 
@@ -43,6 +44,21 @@ export type Theme = 'dark' | 'light';
 export type GizmoMode = 'translate' | 'rotate' | 'scale';
 
 interface AppState {
+  userGeminiLanguageKey: string;
+  setUserGeminiLanguageKey: (key: string) => void;
+  userGeminiImageKey: string;
+  setUserGeminiImageKey: (key: string) => void;
+  userHuggingFaceKey: string;
+  setUserHuggingFaceKey: (key: string) => void;
+  userStabilityKey: string;
+  setUserStabilityKey: (key: string) => void;
+  userReplicateKey: string;
+  setUserReplicateKey: (key: string) => void;
+  userTogetherKey: string;
+  setUserTogetherKey: (key: string) => void;
+  userMagnificKey: string;
+  setUserMagnificKey: (key: string) => void;
+
   theme: Theme;
   setTheme: (theme: Theme) => void;
   
@@ -62,6 +78,9 @@ interface AppState {
   setIsCrossSectionEnabled: (val: boolean) => void;
   crossSectionHeight: number;
   setCrossSectionHeight: (val: number) => void;
+
+  showDimensions: boolean;
+  setShowDimensions: (val: boolean) => void;
   
   walls: Wall[];
   addWall: (wall: Omit<Wall, 'id'>) => void;
@@ -86,6 +105,7 @@ interface AppState {
   clearAll: () => void;
   mockAI_Populate: () => void;
   mockAI_Scan: () => void;
+  aiScanImage: (file: File) => Promise<void>;
 
   past: { walls: Wall[], items: Item[] }[];
   pushToHistory: () => void;
@@ -107,9 +127,26 @@ const defaultItems: Item[] = [
   { id: uuidv4(), type: 'bed', position: { x: 180, y: 180 }, rotation: 0, width: 140, length: 200, height: 50 },
 ];
 
-export const useStore = create<AppState>((set, get) => ({
-  theme: 'dark',
-  setTheme: (theme) => set({ theme }),
+export const useStore = create<AppState>()(
+  persist(
+    (set, get) => ({
+      userGeminiLanguageKey: '',
+      setUserGeminiLanguageKey: (key) => set({ userGeminiLanguageKey: key }),
+      userGeminiImageKey: '',
+      setUserGeminiImageKey: (key) => set({ userGeminiImageKey: key }),
+      userHuggingFaceKey: '',
+      setUserHuggingFaceKey: (key) => set({ userHuggingFaceKey: key }),
+      userStabilityKey: '',
+      setUserStabilityKey: (key) => set({ userStabilityKey: key }),
+      userReplicateKey: '',
+      setUserReplicateKey: (key) => set({ userReplicateKey: key }),
+      userTogetherKey: '',
+      setUserTogetherKey: (key) => set({ userTogetherKey: key }),
+      userMagnificKey: '',
+      setUserMagnificKey: (key) => set({ userMagnificKey: key }),
+
+      theme: 'dark',
+      setTheme: (theme) => set({ theme }),
   
   phase: '2d',
   setPhase: (phase) => set({ phase }),
@@ -127,6 +164,9 @@ export const useStore = create<AppState>((set, get) => ({
   setIsCrossSectionEnabled: (val) => set({ isCrossSectionEnabled: val }),
   crossSectionHeight: 150,
   setCrossSectionHeight: (val) => set({ crossSectionHeight: val }),
+
+  showDimensions: false,
+  setShowDimensions: (val) => set({ showDimensions: val }),
   
   past: [],
   pushToHistory: () => set((state) => ({ past: [...state.past, { walls: state.walls, items: state.items }] })),
@@ -219,5 +259,33 @@ export const useStore = create<AppState>((set, get) => ({
         items: [] 
       });
     }, 3000);
+  },
+
+  aiScanImage: async (file: File) => {
+    set({ isScanning: true });
+    try {
+      // Dynamic import to avoid circular dependency
+      const { scanFloorplanImage } = await import('../services/geminiService');
+      const data = await scanFloorplanImage(file);
+      get().importState(data);
+    } catch (error: any) {
+      console.error(error);
+      alert(`Failed to scan image:\n${error.message || error}`);
+    } finally {
+      set({ isScanning: false });
+    }
   }
-}));
+}),
+{
+  name: 'floor-planner-storage',
+  partialize: (state) => ({ 
+    userGeminiLanguageKey: state.userGeminiLanguageKey, 
+    userGeminiImageKey: state.userGeminiImageKey,
+    userHuggingFaceKey: state.userHuggingFaceKey,
+    userStabilityKey: state.userStabilityKey,
+    userReplicateKey: state.userReplicateKey,
+    userTogetherKey: state.userTogetherKey,
+    userMagnificKey: state.userMagnificKey
+  }),
+}
+));

@@ -36,7 +36,7 @@ export const Planner2D: React.FC = () => {
   const { 
     walls, addWall, items, addItem, updateItem, removeItem,
     mode, activeToolItemType, selectedIds, setSelectedIds, toggleSelection,
-    theme, phase
+    theme, phase, showDimensions
   } = useStore();
 
   const [newWallStart, setNewWallStart] = useState<Point | null>(null);
@@ -490,22 +490,45 @@ export const Planner2D: React.FC = () => {
             ))}
           </Group>
 
-          {walls.map(wall => (
-            <Line
-              key={wall.id}
-              points={[wall.start.x, wall.start.y, wall.end.x, wall.end.y]}
-              stroke={selectedIds.includes(wall.id) ? 'var(--accent-color)' : strokeColor}
-              strokeWidth={wall.thickness}
-              lineCap="round"
-              lineJoin="round"
-              onClick={(e) => {
-                if (mode === 'select') {
-                  if (e.evt.shiftKey) toggleSelection(wall.id);
-                  else setSelectedIds([wall.id]);
-                }
-              }}
-            />
-          ))}
+          {walls.map(wall => {
+            const length = distance(wall.start, wall.end);
+            const cx = (wall.start.x + wall.end.x) / 2;
+            const cy = (wall.start.y + wall.end.y) / 2;
+            let angle = Math.atan2(wall.end.y - wall.start.y, wall.end.x - wall.start.x) * (180 / Math.PI);
+            
+            if (angle > 90 || angle < -90) angle += 180;
+
+            return (
+              <React.Fragment key={wall.id}>
+                <Line
+                  points={[wall.start.x, wall.start.y, wall.end.x, wall.end.y]}
+                  stroke={selectedIds.includes(wall.id) ? 'var(--accent-color)' : strokeColor}
+                  strokeWidth={wall.thickness}
+                  lineCap="round"
+                  lineJoin="round"
+                  onClick={(e) => {
+                    if (mode === 'select') {
+                      if (e.evt.shiftKey) toggleSelection(wall.id);
+                      else setSelectedIds([wall.id]);
+                    }
+                  }}
+                />
+                {showDimensions && (
+                  <Text
+                    x={cx}
+                    y={cy - 20}
+                    text={`${(length / 100).toFixed(2)}m`}
+                    fontSize={14}
+                    fill={strokeColor}
+                    fontFamily="Inter"
+                    align="center"
+                    offsetX={20}
+                    rotation={angle}
+                  />
+                )}
+              </React.Fragment>
+            );
+          })}
 
           {newWallStart && mousePos && (mode === 'wall' || mode === 'inner-wall') && (
             <Line points={[newWallStart.x, newWallStart.y, mousePos.x, mousePos.y]} stroke={strokeColor} strokeWidth={mode === 'inner-wall' ? 8 : 15} opacity={0.5} lineCap="round" />

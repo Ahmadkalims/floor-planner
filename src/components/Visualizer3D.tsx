@@ -1,6 +1,6 @@
 import React, { useMemo, Suspense, useRef, useEffect, useState } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, Environment, MeshReflectorMaterial, useTexture, useGLTF, TransformControls } from '@react-three/drei';
+import { OrbitControls, Environment, MeshReflectorMaterial, useTexture, useGLTF, TransformControls, Text } from '@react-three/drei';
 import { ChevronRight, ChevronLeft } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import type { Wall, Item, Point } from '../store/useStore';
@@ -84,7 +84,7 @@ const ModelLoader: React.FC<{ url: string; item: Item }> = ({ url, item }) => {
 };
 
 const Wall3D: React.FC<{ wall: Wall }> = ({ wall }) => {
-  const { theme, isCrossSectionEnabled, crossSectionHeight } = useStore();
+  const { theme, isCrossSectionEnabled, crossSectionHeight, showDimensions } = useStore();
   const length = distance(wall.start, wall.end);
   const cx = (wall.start.x + wall.end.x) / 2;
   const cy = (wall.start.y + wall.end.y) / 2;
@@ -114,6 +114,19 @@ const Wall3D: React.FC<{ wall: Wall }> = ({ wall }) => {
         <cylinderGeometry args={[wall.thickness / 2, wall.thickness / 2, renderedHeight, 16]} />
         <meshStandardMaterial color={theme === 'dark' ? '#1f2937' : '#f3f4f6'} roughness={0.3} metalness={0.2} />
       </mesh>
+
+      {showDimensions && (
+        <Text
+          position={[cx, renderedHeight + 15, cy]}
+          rotation={[0, -angle, 0]}
+          fontSize={20}
+          color={theme === 'dark' ? '#ffffff' : '#000000'}
+          anchorX="center"
+          anchorY="bottom"
+        >
+          {`${(length / 100).toFixed(2)}m`}
+        </Text>
+      )}
     </group>
   );
 };
@@ -402,7 +415,7 @@ const ItemPropertiesPanel3D: React.FC = () => {
           zIndex: 11, padding: '8px', borderRadius: '8px', cursor: 'pointer', 
           transition: 'left 0.3s ease', background: 'var(--panel-bg)',
           border: '1px solid var(--panel-border)', color: 'var(--text-main)',
-          backdropFilter: 'blur(24px) saturate(180%)', display: 'flex', alignItems: 'center', justifyContent: 'center'
+          backdropFilter: 'blur(24px) saturate(180%)', WebkitBackdropFilter: 'blur(24px) saturate(180%)', display: 'flex', alignItems: 'center', justifyContent: 'center'
         }}
         onClick={() => setIsLeftPanelOpen(!isLeftPanelOpen)}
         title="Toggle Properties"
@@ -517,7 +530,7 @@ const ItemPropertiesPanel3D: React.FC = () => {
 };
 
 export const Visualizer3D: React.FC = () => {
-  const { walls, phase, theme, setSelectedIds } = useStore();
+  const { walls, phase, theme, setSelectedIds, showDimensions, setShowDimensions } = useStore();
   const [aiModalOpen, setAiModalOpen] = useState(false);
   const [isRightPanelOpen, setIsRightPanelOpen] = useState(true);
 
@@ -552,7 +565,7 @@ export const Visualizer3D: React.FC = () => {
           zIndex: 11, padding: '8px', borderRadius: '8px', cursor: 'pointer', 
           transition: 'right 0.3s ease', background: theme === 'dark' ? 'rgba(30,41,59,0.9)' : 'rgba(255,255,255,0.9)',
           border: '1px solid rgba(139, 92, 246, 0.3)', color: theme === 'dark' ? 'white' : 'black',
-          backdropFilter: 'blur(10px)', display: 'flex', alignItems: 'center', justifyContent: 'center'
+          backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)', display: 'flex', alignItems: 'center', justifyContent: 'center'
         }}
         onClick={() => setIsRightPanelOpen(!isRightPanelOpen)}
         title="Toggle Tools"
@@ -568,6 +581,16 @@ export const Visualizer3D: React.FC = () => {
       }}>
         <MiniMap />
         <div style={{ width: '100%', height: '1px', background: 'rgba(255,255,255,0.1)' }} />
+        
+        <div>
+          <div className="section-title">View Settings</div>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '13px', cursor: 'pointer', color: 'var(--text-main)' }}>
+            <input type="checkbox" checked={showDimensions} onChange={e => setShowDimensions(e.target.checked)} />
+            Show Wall Dimensions
+          </label>
+        </div>
+        <div style={{ width: '100%', height: '1px', background: 'rgba(255,255,255,0.1)' }} />
+
         <CrossSectionPanel />
         <div style={{ width: '100%', height: '1px', background: 'rgba(255,255,255,0.1)' }} />
         

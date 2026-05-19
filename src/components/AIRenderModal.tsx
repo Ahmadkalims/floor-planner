@@ -1,32 +1,35 @@
 import React, { useState, useEffect } from 'react';
 import { X, ScanLine, Loader2, Link2 } from 'lucide-react';
+import { useStore } from '../store/useStore';
 
 interface AIRenderModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-type Provider = 'stability' | 'huggingface' | 'replicate';
+type Provider = 'stability' | 'huggingface' | 'replicate' | 'together' | 'magnific';
+type ViewMode = 'interior' | 'exterior';
 
-const resizeImage = (dataUrl: string, maxDim: number): Promise<string> => {
+const resizeImage = (dataUrl: string, targetWidth: number, targetHeight: number): Promise<string> => {
   return new Promise((resolve) => {
     const img = new Image();
     img.onload = () => {
-      let { width, height } = img;
-      if (width > maxDim || height > maxDim) {
-        const ratio = Math.min(maxDim / width, maxDim / height);
-        width = Math.floor(width * ratio);
-        height = Math.floor(height * ratio);
-      }
-      // Stability AI requires dimensions to be multiples of 64
-      width = Math.max(64, Math.floor(width / 64) * 64);
-      height = Math.max(64, Math.floor(height / 64) * 64);
-      
       const canvas = document.createElement('canvas');
-      canvas.width = width;
-      canvas.height = height;
+      canvas.width = targetWidth;
+      canvas.height = targetHeight;
       const ctx = canvas.getContext('2d');
-      if (ctx) ctx.drawImage(img, 0, 0, width, height);
+      if (ctx) {
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, targetWidth, targetHeight);
+        
+        const ratio = Math.min(targetWidth / img.width, targetHeight / img.height);
+        const drawWidth = img.width * ratio;
+        const drawHeight = img.height * ratio;
+        const offsetX = (targetWidth - drawWidth) / 2;
+        const offsetY = (targetHeight - drawHeight) / 2;
+        
+        ctx.drawImage(img, offsetX, offsetY, drawWidth, drawHeight);
+      }
       resolve(canvas.toDataURL('image/png'));
     };
     img.src = dataUrl;
@@ -37,23 +40,14 @@ export const AIRenderModal: React.FC<AIRenderModalProps> = ({ isOpen, onClose })
   const [screenshotUrl, setScreenshotUrl] = useState<string | null>(null);
   const [preset, setPreset] = useState('Modern');
   const [provider, setProvider] = useState<Provider>('stability');
+  const [viewMode, setViewMode] = useState<ViewMode>('interior');
   
-  const [apiKeys, setApiKeys] = useState({
-    stability: import.meta.env.VITE_STABILITY_API_KEY || '',
-    huggingface: import.meta.env.VITE_HUGGINGFACE_API_KEY || '',
-    replicate: import.meta.env.VITE_REPLICATE_API_KEY || ''
-  });
+  const store = useStore();
 
   const [status, setStatus] = useState<'idle' | 'capturing' | 'generating' | 'done' | 'error'>('idle');
   const [resultImage, setResultImage] = useState<string | null>(null);
   
   const presets = ['Modern', 'Minimalistic', 'Vintage', 'Indian', 'Baroque', 'Industrial', 'Sci-Fi'];
-
-  const providerLinks = {
-    stability: 'https://platform.stability.ai/account/keys',
-    huggingface: 'https://huggingface.co/settings/tokens',
-    replicate: 'https://replicate.com/account/api-tokens'
-  };
 
   useEffect(() => {
     if (isOpen) {
@@ -78,34 +72,45 @@ export const AIRenderModal: React.FC<AIRenderModalProps> = ({ isOpen, onClose })
   }, [isOpen]);
 
   const handleGenerate = async () => {
-    const apiKey = apiKeys[provider];
+    let apiKey = '';
+    if (provider === 'stability') apiKey = store.userStabilityKey || import.meta.env.VITE_STABILITY_API_KEY;
+    if (provider === 'huggingface') apiKey = store.userHuggingFaceKey || import.meta.env.VITE_HUGGINGFACE_API_KEY;
+    if (provider === 'replicate') apiKey = store.userReplicateKey || import.meta.env.VITE_REPLICATE_API_KEY;
+    if (provider === 'together') apiKey = store.userTogetherKey || import.meta.env.VITE_TOGETHER_API_KEY;
+    if (provider === 'magnific') apiKey = store.userMagnificKey || import.meta.env.VITE_MAGNIFIC_API_KEY;
+
     if (!apiKey) {
-      alert("Please enter your API Key");
+      alert(`Please enter your ${provider} API Key in Settings`);
       return;
     }
     
     setStatus('generating');
     
     try {
-      const prompt = `A photorealistic ${preset} style interior design room, architectural photography, cinematic lighting, 4k resolution, highly detailed`;
+      let prompt = '';
+      if (viewMode === 'interior') {
+        prompt = `photorealistic ${preset} style interior architecture, highly detailed, cinematic lighting, lush indoor foliage, vibrant potted plants, soft natural light through windows, 4k resolution, Unreal Engine 5 render, interior design magazine quality.`;
+      } else {
+        prompt = `photorealistic ${preset} style exterior architecture, stunning architectural rendering, lush outdoor foliage, paved roads, clear beautiful skies, dummy people walking with motion blur, vibrant landscaping, cinematic sunlight, highly detailed, 4k resolution, hyper-realistic environment.`;
+      }
 
       if (provider === 'stability') {
         if (!screenshotUrl) throw new Error("No screenshot available");
-        
-        const resizedDataUrl = await resizeImage(screenshotUrl, 1024);
+        // SDXL requires strict dimensions, 1024x1024 is the standard
+        const resizedDataUrl = await resizeImage(screenshotUrl, 1024, 1024);
         const response = await fetch(resizedDataUrl);
         const blob = await response.blob();
         
         const formData = new FormData();
         formData.append('init_image', blob);
         formData.append('init_image_mode', 'IMAGE_STRENGTH');
-        formData.append('image_strength', '0.45'); // 0.0 to 1.0 (Lower = more AI creativity)
+        formData.append('image_strength', '0.40');
         formData.append('text_prompts[0][text]', prompt);
         formData.append('cfg_scale', '7');
         formData.append('samples', '1');
         formData.append('steps', '30');
 
-        const res = await fetch('https://api.stability.ai/v1/generation/stable-diffusion-v1-6/image-to-image', {
+        const res = await fetch('https://api.stability.ai/v1/generation/stable-diffusion-xl-1024-v1-0/image-to-image', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${apiKey}`,
@@ -119,7 +124,6 @@ export const AIRenderModal: React.FC<AIRenderModalProps> = ({ isOpen, onClose })
         setResultImage(`data:image/png;base64,${data.artifacts[0].base64}`);
 
       } else if (provider === 'huggingface') {
-        // HF Inference
         const res = await fetch('https://api-inference.huggingface.co/models/runwayml/stable-diffusion-v1-5', {
           method: 'POST',
           headers: {
@@ -134,10 +138,8 @@ export const AIRenderModal: React.FC<AIRenderModalProps> = ({ isOpen, onClose })
         setResultImage(URL.createObjectURL(blob));
 
       } else if (provider === 'replicate') {
-        const resizedDataUrl = await resizeImage(screenshotUrl!, 512);
+        const resizedDataUrl = await resizeImage(screenshotUrl!, 512, 512);
         
-        // Use a different proxy specifically handling large payloads better, or fallback to corsproxy if it was just a size issue.
-        // We will try corsproxy first because the size is now much smaller (512x512 = ~100kb base64).
         const startRes = await fetch('https://corsproxy.io/?https://api.replicate.com/v1/predictions', {
           method: 'POST',
           headers: {
@@ -158,7 +160,6 @@ export const AIRenderModal: React.FC<AIRenderModalProps> = ({ isOpen, onClose })
         if (!startRes.ok) throw new Error(await startRes.text());
         let prediction = await startRes.json();
         
-        // Polling loop
         while (prediction.status !== 'succeeded' && prediction.status !== 'failed') {
           await new Promise(r => setTimeout(r, 2500));
           const pollRes = await fetch(`https://corsproxy.io/?${prediction.urls.get}`, {
@@ -169,9 +170,31 @@ export const AIRenderModal: React.FC<AIRenderModalProps> = ({ isOpen, onClose })
         
         if (prediction.status === 'failed') throw new Error("Replicate generation failed");
         
-        // ControlNet usually returns an array: [annotated_image, generated_image]
         const finalUrl = Array.isArray(prediction.output) ? prediction.output[prediction.output.length - 1] : prediction.output;
         setResultImage(finalUrl);
+
+      } else if (provider === 'together') {
+        // Together AI uses text-to-image mostly for free tier
+        const res = await fetch('https://api.together.xyz/v1/images/generations', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            model: "stabilityai/stable-diffusion-xl-base-1.0",
+            prompt: prompt,
+            n: 1,
+            steps: 20
+          })
+        });
+        if (!res.ok) throw new Error(await res.text());
+        const data = await res.json();
+        setResultImage(data.data[0].url || `data:image/png;base64,${data.data[0].b64_json}`);
+        
+      } else if (provider === 'magnific') {
+        alert("Magnific AI API is not fully integrated yet, falling back to HuggingFace for demo");
+        throw new Error("Magnific AI requires a paid subscription endpoint.");
       }
       
       setStatus('done');
@@ -248,26 +271,24 @@ export const AIRenderModal: React.FC<AIRenderModalProps> = ({ isOpen, onClose })
                 onChange={e => setProvider(e.target.value as Provider)}
                 style={{ width: '100%', padding: '10px', background: 'rgba(0,0,0,0.5)', color: 'white', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '4px' }}
               >
-                <option value="stability" style={{color: 'black'}}>Stability AI (Image-to-Image)</option>
-                <option value="huggingface" style={{color: 'black'}}>Hugging Face (Text-to-Image)</option>
-                <option value="replicate" style={{color: 'black'}}>Replicate (ControlNet)</option>
+                <option value="stability" style={{color: 'black'}}>Stability AI</option>
+                <option value="huggingface" style={{color: 'black'}}>Hugging Face</option>
+                <option value="replicate" style={{color: 'black'}}>Replicate</option>
+                <option value="together" style={{color: 'black'}}>Together AI</option>
+                <option value="magnific" style={{color: 'black'}}>Magnific AI</option>
               </select>
             </div>
 
             <div className="param-input">
-              <label style={{ display: 'flex', justifyContent: 'space-between' }}>
-                API Key
-                <a href={providerLinks[provider]} target="_blank" rel="noreferrer" style={{ color: '#ec4899', display: 'flex', alignItems: 'center', gap: '2px', textDecoration: 'none' }}>
-                  <Link2 size={12} /> Get Key
-                </a>
-              </label>
-              <input 
-                type="password" 
-                value={apiKeys[provider]} 
-                onChange={e => setApiKeys({ ...apiKeys, [provider]: e.target.value })} 
-                placeholder="Enter API Key"
-                style={{ width: '100%', padding: '10px', background: 'rgba(255,255,255,0.1)', color: 'white', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '4px' }} 
-              />
+              <label>View Mode</label>
+              <select 
+                value={viewMode} 
+                onChange={e => setViewMode(e.target.value as ViewMode)}
+                style={{ width: '100%', padding: '10px', background: 'rgba(0,0,0,0.5)', color: 'white', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '4px' }}
+              >
+                <option value="interior" style={{color: 'black'}}>Interior (Indoor Foliage, Soft Lighting)</option>
+                <option value="exterior" style={{color: 'black'}}>Exterior (Roads, Skies, Motion Blurred People)</option>
+              </select>
             </div>
 
             <div className="param-input">
@@ -282,9 +303,7 @@ export const AIRenderModal: React.FC<AIRenderModalProps> = ({ isOpen, onClose })
             </div>
             
             <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)', marginTop: '10px' }}>
-              {provider === 'stability' && "Uses structural outlines from your 3D view to guide the generation."}
-              {provider === 'huggingface' && "Free tier uses SDXL Text-to-Image (ignores 3D view shape)."}
-              {provider === 'replicate' && "Uses advanced ControlNet to mathematically match your wall lines exactly."}
+              Ensure your API key is set in the main Settings (Gear Icon) before generating.
             </div>
 
             <button 
