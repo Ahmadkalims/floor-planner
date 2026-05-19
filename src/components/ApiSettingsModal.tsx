@@ -13,7 +13,6 @@ export const ApiSettingsModal: React.FC<{ onClose: () => void }> = ({ onClose })
     userMagnificKey, setUserMagnificKey
   } = useStore();
 
-  const [langKey, setLangKey] = useState(userGeminiLanguageKey);
   const [imgKey, setImgKey] = useState(userGeminiImageKey);
   const [hfKey, setHfKey] = useState(userHuggingFaceKey);
   const [stabKey, setStabKey] = useState(userStabilityKey);
@@ -22,7 +21,6 @@ export const ApiSettingsModal: React.FC<{ onClose: () => void }> = ({ onClose })
   const [magKey, setMagKey] = useState(userMagnificKey);
 
   const handleSave = () => {
-    setUserGeminiLanguageKey(langKey);
     setUserGeminiImageKey(imgKey);
     setUserHuggingFaceKey(hfKey);
     setUserStabilityKey(stabKey);

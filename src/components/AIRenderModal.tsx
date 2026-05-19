@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, ScanLine, Loader2, Link2 } from 'lucide-react';
+import { X, ScanLine, Loader2 } from 'lucide-react';
 import { useStore } from '../store/useStore';
 
 interface AIRenderModalProps {
