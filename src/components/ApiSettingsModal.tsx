@@ -4,7 +4,6 @@ import { X, Save, KeyRound } from 'lucide-react';
 
 export const ApiSettingsModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   const { 
-    userGeminiLanguageKey, setUserGeminiLanguageKey,
     userGeminiImageKey, setUserGeminiImageKey,
     userHuggingFaceKey, setUserHuggingFaceKey,
     userStabilityKey, setUserStabilityKey,
