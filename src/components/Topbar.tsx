@@ -10,8 +10,16 @@ export const Topbar: React.FC = () => {
   return (
     <>
       <div className="topbar" style={{ justifyContent: 'center', pointerEvents: 'none' }}>
+        
+        <div className="logo-container">
+          <img 
+            src={theme === 'dark' ? '/logo/dark theme.png' : '/logo/light theme.png'} 
+            alt="Floor Planner Logo" 
+            className="logo-img"
+          />
+        </div>
       
-      <div className="mode-switcher" style={{ pointerEvents: 'auto' }}>
+        <div className="mode-switcher" style={{ pointerEvents: 'auto' }}>
         <button 
           className={`mode-btn ${phase === '2d' ? 'active' : ''}`}
           onClick={() => setPhase('2d')}
